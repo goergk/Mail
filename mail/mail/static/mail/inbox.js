@@ -4,7 +4,12 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelector('#inbox').addEventListener('click', () => load_mailbox('inbox'));
   document.querySelector('#sent').addEventListener('click', () => load_mailbox('sent'));
   document.querySelector('#archived').addEventListener('click', () => load_mailbox('archive'));
-  document.querySelector('#compose').addEventListener('click', compose_email);
+  document.querySelector('#compose').addEventListener('click', (compose_email));
+
+  // =====================================
+  // Send new email
+  document.querySelector('#compose-form').addEventListener('submit', (send_email));
+  // =====================================
 
   // By default, load the inbox
   load_mailbox('inbox');
@@ -20,6 +25,7 @@ function compose_email() {
   document.querySelector('#compose-recipients').value = '';
   document.querySelector('#compose-subject').value = '';
   document.querySelector('#compose-body').value = '';
+
 }
 
 function load_mailbox(mailbox) {
@@ -30,4 +36,33 @@ function load_mailbox(mailbox) {
 
   // Show the mailbox name
   document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
+}
+
+// =====================================
+function send_email() {
+
+  recipents_ = document.querySelector('#compose-recipients').value
+  subject_ = document.querySelector('#compose-subject').value
+  body_ = document.querySelector('#compose-body').value 
+
+  console.log(recipents_)
+  console.log(subject_)
+  console.log(body_)
+
+  //Send POST Request
+  fetch('/emails', {
+    method: 'POST',
+    body: JSON.stringify({
+        recipients: recipents_,
+        subject: subject_,
+        body: body_
+    })
+  })
+  .then(response => response.json())
+  .then(result => {
+      // Print result
+      console.log(result);
+  });
+
+  load_mailbox('sent');
 }
