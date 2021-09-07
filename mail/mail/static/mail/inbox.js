@@ -50,17 +50,28 @@ function load_mailbox(mailbox) {
 
       const element_1 = document.createElement('div');
       element_1.classList.add("title-subject_container");
-      element_1.innerHTML = `<p id='recipients'><b>${email.recipients}</b></p><p>${email.subject}</p>`;
+      if (mailbox === 'inbox' || mailbox ==='archive'){
+        element_1.innerHTML = `<p id='recipients'><b>${email.sender}</b></p><p>${email.subject}</p>`;
+      } else{
+        element_1.innerHTML = `<p id='recipients'><b>${email.recipients}</b></p><p>${email.subject}</p>`;
+      } 
 
       const element_2 = document.createElement('div');
-      element_2.classList.add("date_container");
+      element_2.classList.add("date-button_container");
       element_2.innerHTML = `<p>${email.timestamp}</p>`;
-
+      
       document.querySelector('#emails-view').append(element);
       document.querySelector(`#email_container_${index}`).append(element_1);
       document.querySelector(`#email_container_${index}`).append(element_2);
-  
-      element.addEventListener('click', () => load_email(email.id));
+
+      element.addEventListener('click', () => load_email(email.id, mailbox));
+
+      // Add background color depending on the 'read' property
+      if (email.read){
+        document.querySelector(`#email_container_${index}`).style.backgroundColor = "rgb(228, 228, 228)";
+      } else {
+        document.querySelector(`#email_container_${index}`).style.backgroundColor = "white";
+      }
       
     });
   });  
@@ -93,7 +104,7 @@ function send_email() {
   load_mailbox('sent');
 }
 
-function load_email(email_id) {
+function load_email(email_id, mailbox) {
 
   document.querySelector('#emails-view').style.display = 'block';
   document.querySelector('#compose-view').style.display = 'none';
@@ -115,6 +126,7 @@ function load_email(email_id) {
       const element_5 = document.createElement('button');
       const element_6 = document.createElement('hr');
       const element_7 = document.createElement('p');
+      const element_8 = document.createElement('button');
 
       element_1.innerHTML = `<b>From:</b> ${email.sender}`;
       element_2.innerHTML = `<b>To:</b> ${email.recipients}`;
@@ -130,14 +142,55 @@ function load_email(email_id) {
       element_5.classList.add('btn', 'btn-sm', 'btn-outline-primary');
 
       document.querySelector('#emails-view').append(element);
+
+      //Add unarchived button if email is archived
+      if (mailbox !== 'sent') {
+        if(email.archived) {
+          element_8.innerHTML = 'Unarchive';
+          element_8.classList.add('btn', 'btn-sm', 'btn-outline-primary');
+          element_8.setAttribute('id', 'unarchive_button');
+          
+        } else {
+          element_8.innerHTML = 'Archive';
+          element_8.classList.add('btn', 'btn-sm', 'btn-outline-primary');
+          element_8.setAttribute('id', 'archive_button');
+        }
+      }
+
       element.append(element_1);
       element.append(element_2);
       element.append(element_3);
       element.append(element_4);
       element.append(element_5);
+      if (mailbox !== 'sent') {
+        element.append(element_8);
+      }
       element.append(element_6);
       element.append(element_7);
+
+      element_8.addEventListener('click', () => archiveHandler(email.id, email.archived));
+
   });
 
-  
+  //Update 'read' value
+  fetch('/emails/'+email_id, {
+    method: 'PUT',
+    body: JSON.stringify({
+        read: true
+    })
+  });
+
+}
+
+function archiveHandler(email_id, isArchived) {
+
+  //Update 'archived' value
+  fetch('/emails/'+email_id, {
+    method: 'PUT',
+    body: JSON.stringify({
+        archived: !isArchived
+    })
+  });
+
+  setTimeout(function(){ load_mailbox('inbox'); }, 200);
 }
