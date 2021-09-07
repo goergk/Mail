@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelector('#inbox').addEventListener('click', () => load_mailbox('inbox'));
   document.querySelector('#sent').addEventListener('click', () => load_mailbox('sent'));
   document.querySelector('#archived').addEventListener('click', () => load_mailbox('archive'));
-  document.querySelector('#compose').addEventListener('click', compose_email);
+  document.querySelector('#compose').addEventListener('click', () => compose_email(''));
 
   // Add event listener to compose form button
   document.querySelector('#compose-form').addEventListener('submit', send_email);
@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
   load_mailbox('inbox');
 });
 
-function compose_email() {
+function compose_email(email) {
 
   // Show compose view and hide other views
   document.querySelector('#emails-view').style.display = 'none';
@@ -24,6 +24,22 @@ function compose_email() {
   document.querySelector('#compose-subject').value = '';
   document.querySelector('#compose-body').value = '';
 
+  document.querySelector('#compose-recipients').disabled = ''
+  document.querySelector('#compose-subject').disabled = ''
+
+  // pre-fill if replying
+  if(email) {
+    document.querySelector('#compose-recipients').value = email.sender;
+    if (email.subject.includes("Re: ")){
+      document.querySelector('#compose-subject').value = `${email.subject}`;
+    } else {
+      document.querySelector('#compose-subject').value = `Re: ${email.subject}`;
+    }
+    document.querySelector('#compose-body').value = `"On ${email.timestamp} ${email.sender} wrote:\n${email.body}"`;
+
+    document.querySelector('#compose-recipients').disabled = 'true'
+    document.querySelector('#compose-subject').disabled = 'true'
+  } 
 }
 
 function load_mailbox(mailbox) {
@@ -80,6 +96,7 @@ function load_mailbox(mailbox) {
 
 // =====================================
 function send_email() {
+  event.preventDefault()
 
   //Get values from form
   recipents_ = document.querySelector('#compose-recipients').value
@@ -101,7 +118,8 @@ function send_email() {
       console.log(result);
   });
 
-  load_mailbox('sent');
+  setTimeout(() => load_mailbox('sent'), 200);
+  
 }
 
 function load_email(email_id, mailbox) {
@@ -132,18 +150,17 @@ function load_email(email_id, mailbox) {
       element_2.innerHTML = `<b>To:</b> ${email.recipients}`;
       element_3.innerHTML = `<b>Subject:</b> ${email.subject}`;
       element_4.innerHTML = `<b>Timestamp:</b> ${email.timestamp}`;
-      element_5.innerHTML = 'Reply';
+      element_7.style = "white-space: pre-line";
       element_7.innerHTML = email.body;
       
       element_1.classList.add('email-information');
       element_2.classList.add('email-information');
       element_3.classList.add('email-information');
       element_4.classList.add('email-information');
-      element_5.classList.add('btn', 'btn-sm', 'btn-outline-primary');
 
       document.querySelector('#emails-view').append(element);
 
-      //Add unarchived button if email is archived
+      //Add unarchived/archived buttons && Reply button
       if (mailbox !== 'sent') {
         if(email.archived) {
           element_8.innerHTML = 'Unarchive';
@@ -155,19 +172,23 @@ function load_email(email_id, mailbox) {
           element_8.classList.add('btn', 'btn-sm', 'btn-outline-primary');
           element_8.setAttribute('id', 'archive_button');
         }
+
+        element_5.innerHTML = 'Reply';
+        element_5.classList.add('btn', 'btn-sm', 'btn-outline-primary');
       }
 
       element.append(element_1);
       element.append(element_2);
       element.append(element_3);
       element.append(element_4);
-      element.append(element_5);
       if (mailbox !== 'sent') {
+        element.append(element_5);
         element.append(element_8);
       }
       element.append(element_6);
       element.append(element_7);
 
+      element_5.addEventListener('click', () => compose_email(email));
       element_8.addEventListener('click', () => archiveHandler(email.id, email.archived));
 
   });
@@ -192,5 +213,5 @@ function archiveHandler(email_id, isArchived) {
     })
   });
 
-  setTimeout(function(){ load_mailbox('inbox'); }, 200);
+  setTimeout(() => load_mailbox('inbox'), 200);
 }
